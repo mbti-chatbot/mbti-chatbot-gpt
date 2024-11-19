@@ -5,6 +5,7 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -27,6 +28,7 @@ export default function Home() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setError(null);
 
     try {
       const response = await axios.post("/api/chat", {
@@ -42,6 +44,22 @@ export default function Home() {
       ]);
     } catch (error) {
       console.error("Error:", error);
+      setError(
+        error.response?.data?.error ||
+          "An error occurred while processing your request"
+      );
+
+      // 에러 메시지를 채팅창에 표시
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "system",
+          content: `Error: ${
+            error.response?.data?.error ||
+            "An error occurred while processing your request"
+          }`
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -55,11 +73,19 @@ export default function Home() {
             <div
               key={index}
               className={`mb-4 p-4 rounded-lg ${
-                message.role === "user" ? "bg-white" : "bg-chatbot-light"
+                message.role === "user"
+                  ? "bg-white"
+                  : message.role === "system"
+                  ? "bg-red-100"
+                  : "bg-chatbot-light"
               }`}
             >
               <div className="font-medium mb-1">
-                {message.role === "user" ? "You" : "Assistant"}
+                {message.role === "user"
+                  ? "You"
+                  : message.role === "system"
+                  ? "System"
+                  : "Assistant"}
               </div>
               <div>{message.content}</div>
             </div>
