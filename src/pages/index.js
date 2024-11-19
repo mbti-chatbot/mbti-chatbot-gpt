@@ -54,20 +54,38 @@ export default function Home() {
     return `${baseStyle} ${colorStyle}`;
   };
 
+  const handleMbtiSelect = (mbti) => {
+    setSelectedMBTI(mbti);
+    // MBTI가 변경될 때마다 시스템 프롬프트 메시지 추가
+    const systemPrompt = `AI는 ${mbti}의 성격을 매우 강하게 가진 AI이고, 너의 대답은 항상 ${mbti}의 말투로 사용자에게 제공한다. AI는 다른 건 전혀 고려하지 않고, ${mbti}의 성향에 맞는 답변을 사용자에게 제공한다.`;
+
+    setMessages([
+      {
+        role: "system",
+        content: systemPrompt
+      }
+    ]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !selectedMBTI) return;
 
     const userMessage = { role: "user", content: input };
-    const messagesWithMBTI = selectedMBTI
-      ? [
-          { role: "system", content: `User MBTI: ${selectedMBTI}` },
-          ...messages,
-          userMessage
-        ]
-      : [...messages, userMessage];
 
-    setMessages((prev) => [...prev, userMessage]);
+    // MBTI 프롬프트를 항상 첫 번째 메시지로 포함
+    const mbtiPrompt = `AI는 ${selectedMBTI}의 성격을 매우 강하게 가진 AI이고, 너의 대답은 항상 ${selectedMBTI}의 말투로 사용자에게 제공한다. AI는 다른 건 전혀 고려하지 않고, ${selectedMBTI}의 성향에 맞는 답변을 사용자에게 제공한다.`;
+
+    const messagesWithMBTI = [
+      { role: "system", content: mbtiPrompt },
+      ...messages.filter((msg) => msg.role !== "system"),
+      userMessage
+    ];
+
+    setMessages((prev) => [
+      ...prev.filter((msg) => msg.role !== "system"),
+      userMessage
+    ]);
     setInput("");
     setIsLoading(true);
 
@@ -108,14 +126,25 @@ export default function Home() {
           </h1>
 
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-700">
-              Choose your personality type:
-            </h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold text-gray-700">
+                Choose your personality type:
+              </h2>
+              {selectedMBTI && (
+                <span
+                  className={`px-4 py-2 rounded-lg font-bold ${
+                    MBTI_COLORS[selectedMBTI[0]].selected
+                  } text-white`}
+                >
+                  {selectedMBTI}
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {MBTI_TYPES.map((mbti) => (
                 <button
                   key={mbti}
-                  onClick={() => setSelectedMBTI(mbti)}
+                  onClick={() => handleMbtiSelect(mbti)}
                   className={getButtonStyle(mbti)}
                 >
                   {mbti}
@@ -139,7 +168,7 @@ export default function Home() {
                     ? "ml-auto bg-blue-500 text-white"
                     : message.role === "system"
                     ? "bg-gray-100 text-gray-700"
-                    : "bg-white text-gray-700"
+                    : "bg-white text-gray-700 border border-gray-200"
                 }
               `}
             >
@@ -148,7 +177,7 @@ export default function Home() {
                   ? "You"
                   : message.role === "system"
                   ? "System"
-                  : "Assistant"}
+                  : selectedMBTI}
               </div>
               <div>{message.content}</div>
             </div>
@@ -169,14 +198,18 @@ export default function Home() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="메시지를 입력하세요..."
+            placeholder={
+              selectedMBTI
+                ? "메시지를 입력하세요..."
+                : "MBTI를 먼저 선택해주세요"
+            }
             className="flex-1 rounded-xl border-gray-300 shadow-sm 
                      focus:border-blue-500 focus:ring-blue-500"
-            disabled={isLoading}
+            disabled={isLoading || !selectedMBTI}
           />
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !selectedMBTI}
             className="px-6 py-3 bg-blue-500 text-white rounded-xl
                      hover:bg-blue-600 disabled:opacity-50
                      flex items-center gap-2 shadow-sm hover:shadow-md
