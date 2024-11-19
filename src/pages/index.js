@@ -131,7 +131,6 @@ export default function Home() {
     const prevMbti = selectedMBTI;
     setSelectedMBTI(mbti);
 
-    // 기존 메시지는 그대로 유지하고, 새로운 메시지만 추가
     const changeMessage = {
       role: "system",
       content: `MBTI가 ${
@@ -146,7 +145,6 @@ export default function Home() {
       timestamp: new Date().getTime() + 1
     };
 
-    // 기존 메시지 뒤에 새로운 메시지들 추가
     setMessages((prev) => [...prev, changeMessage, systemPrompt]);
   };
 
@@ -157,10 +155,10 @@ export default function Home() {
     const userMessage = {
       role: "user",
       content: input,
-      timestamp: new Date().getTime()
+      timestamp: new Date().getTime(),
+      mbti: selectedMBTI // 현재 선택된 MBTI 저장
     };
 
-    // 기존 대화 내용 유지하면서 새 메시지 추가
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -168,12 +166,10 @@ export default function Home() {
     try {
       const response = await axios.post("/api/chat", {
         messages: [
-          // GPT API 요청시 현재 MBTI의 시스템 프롬프트를 포함
           {
             role: "system",
             content: `AI는 ${selectedMBTI}의 성격을 매우 강하게 가진 AI이고, 너의 대답은 항상 ${selectedMBTI}의 말투로 사용자에게 제공한다. AI는 다른 건 전혀 고려하지 않고, ${selectedMBTI}의 성향에 맞는 답변을 사용자에게 제공한다.`
           },
-          // 이전 대화 내용과 새 메시지 포함
           ...messages,
           userMessage
         ]
@@ -182,10 +178,10 @@ export default function Home() {
       const assistantMessage = {
         role: "assistant",
         content: response.data.message,
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
+        mbti: selectedMBTI // 응답 시점의 MBTI 저장
       };
 
-      // 새로운 응답 메시지 추가
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       const errorMessage = {
@@ -201,17 +197,17 @@ export default function Home() {
     }
   };
 
-  const MessageBubble = ({ message, index, selectedMBTI }) => {
+  const MessageBubble = ({ message, index }) => {
     const getMessageStyle = () => {
       if (message.role === "user") {
         return "ml-auto bg-gray-700 text-white";
       } else if (message.role === "system") {
         return "bg-gray-100 text-gray-700";
       } else {
-        // assistant 메시지의 경우 MBTI가 선택되었을 때만 해당 색상 사용
-        return selectedMBTI
-          ? `${MBTI_COLORS[selectedMBTI].chat} text-white`
-          : "bg-blue-500 text-white"; // 기본 색상
+        // assistant 메시지의 경우 메시지에 저장된 MBTI의 색상 사용
+        return message.mbti
+          ? `${MBTI_COLORS[message.mbti].chat} text-white`
+          : "bg-blue-500 text-white";
       }
     };
 
@@ -227,7 +223,7 @@ export default function Home() {
             ? "You"
             : message.role === "system"
             ? "System"
-            : selectedMBTI || "Assistant"}
+            : message.mbti || "Assistant"}
         </div>
         <div>{message.content}</div>
       </div>
@@ -293,6 +289,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-4">
@@ -301,7 +298,6 @@ export default function Home() {
               key={message.timestamp || index}
               message={message}
               index={index}
-              selectedMBTI={selectedMBTI} // selectedMBTI prop 전달
             />
           ))}
           {isLoading && (
@@ -312,6 +308,7 @@ export default function Home() {
           <div ref={messagesEndRef} />
         </div>
       </div>
+
       {/* Input Area */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-4">
@@ -324,8 +321,7 @@ export default function Home() {
                 ? "메시지를 입력하세요..."
                 : "MBTI를 먼저 선택해주세요"
             }
-            className="flex-1 rounded-xl border-gray-300 shadow-sm 
-                     focus:border-blue-500 focus:ring-blue-500"
+            className="flex-1 rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             disabled={isLoading || !selectedMBTI}
           />
           <button
