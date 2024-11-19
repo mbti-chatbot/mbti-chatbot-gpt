@@ -1,17 +1,25 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}"
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}"
   ],
   theme: {
     extend: {
       colors: {
-        chatbot: {
-          light: "#f7f7f8",
-          dark: "#343541",
-          border: "#e5e5e5"
+        primary: {
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          500: "#0ea5e9",
+          600: "#0284c7"
         }
+      },
+      spacing: {
+        18: "4.5rem"
+      },
+      maxWidth: {
+        "8xl": "88rem"
       }
     }
   },

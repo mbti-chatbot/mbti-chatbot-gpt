@@ -4,28 +4,29 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-rgb: 247, 247, 248;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  min-height: 100vh;
+  background: #f8fafc;
 }
 
-/* 스크롤바 스타일링 */
-::-webkit-scrollbar {
-  width: 8px;
+.chat-container {
+  @apply max-w-5xl mx-auto px-4;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.mbti-button {
+  @apply transition-all duration-200 ease-in-out;
+  @apply hover:shadow-lg hover:-translate-y-0.5;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+.message-bubble {
+  @apply rounded-2xl p-4 shadow-sm max-w-[85%];
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.input-container {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200;
+  @apply px-4 py-4 md:py-6;
 }
