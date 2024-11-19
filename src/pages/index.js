@@ -126,11 +126,12 @@ export default function Home() {
       : `${MBTI_COLORS[mbti].bg} text-gray-700`;
     return `${baseStyle} ${colorStyle}`;
   };
+
   const handleMbtiSelect = (mbti) => {
     const prevMbti = selectedMBTI;
     setSelectedMBTI(mbti);
 
-    // MBTI 변경 알림 메시지 추가
+    // 기존 메시지는 그대로 유지하고, 새로운 메시지만 추가
     const changeMessage = {
       role: "system",
       content: `MBTI가 ${
@@ -139,78 +140,62 @@ export default function Home() {
       timestamp: new Date().getTime()
     };
 
-    // GPT 프롬프트용 시스템 메시지
     const systemPrompt = {
       role: "system",
       content: `AI는 ${mbti}의 성격을 매우 강하게 가진 AI이고, 너의 대답은 항상 ${mbti}의 말투로 사용자에게 제공한다. AI는 다른 건 전혀 고려하지 않고, ${mbti}의 성향에 맞는 답변을 사용자에게 제공한다.`,
-      timestamp: new Date().getTime() + 1 // 변경 메시지 다음에 표시되도록 1ms 추가
+      timestamp: new Date().getTime() + 1
     };
 
-    // 기존 메시지에서 이전 시스템 프롬프트 메시지들을 제외
-    const existingMessages = messages.filter(
-      (msg) =>
-        !(
-          msg.role === "system" &&
-          msg.content.includes("AI는") &&
-          msg.content.includes("성격을 매우 강하게 가진 AI")
-        )
-    );
-
-    // 새 메시지 배열 구성: 기존 메시지 + 변경 알림 + 새 시스템 프롬프트
-    setMessages([...existingMessages, changeMessage, systemPrompt]);
+    // 기존 메시지 뒤에 새로운 메시지들 추가
+    setMessages((prev) => [...prev, changeMessage, systemPrompt]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || !selectedMBTI) return;
 
-    const userMessage = { role: "user", content: input };
+    const userMessage = {
+      role: "user",
+      content: input,
+      timestamp: new Date().getTime()
+    };
 
-    // MBTI 프롬프트를 포함하되, 기존 대화 내용 유지
-    const mbtiPrompt = `AI는 ${selectedMBTI}의 성격을 매우 강하게 가진 AI이고, 너의 대답은 항상 ${selectedMBTI}의 말투로 사용자에게 제공한다. AI는 다른 건 전혀 고려하지 않고, ${selectedMBTI}의 성향에 맞는 답변을 사용자에게 제공한다.`;
-
-    // 시스템 메시지를 제외한 기존 메시지 가져오기
-    const existingMessages = messages.filter((msg) => msg.role !== "system");
-
-    // API 요청용 메시지 배열 구성
-    const messagesWithMBTI = [
-      { role: "system", content: mbtiPrompt },
-      ...existingMessages,
-      userMessage
-    ];
-
-    // UI에 표시할 메시지 업데이트
-    setMessages([
-      { role: "system", content: mbtiPrompt },
-      ...existingMessages,
-      userMessage
-    ]);
-
+    // 기존 대화 내용 유지하면서 새 메시지 추가
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
       const response = await axios.post("/api/chat", {
-        messages: messagesWithMBTI
+        messages: [
+          // GPT API 요청시 현재 MBTI의 시스템 프롬프트를 포함
+          {
+            role: "system",
+            content: `AI는 ${selectedMBTI}의 성격을 매우 강하게 가진 AI이고, 너의 대답은 항상 ${selectedMBTI}의 말투로 사용자에게 제공한다. AI는 다른 건 전혀 고려하지 않고, ${selectedMBTI}의 성향에 맞는 답변을 사용자에게 제공한다.`
+          },
+          // 이전 대화 내용과 새 메시지 포함
+          ...messages,
+          userMessage
+        ]
       });
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: response.data.message
-        }
-      ]);
+      const assistantMessage = {
+        role: "assistant",
+        content: response.data.message,
+        timestamp: new Date().getTime()
+      };
+
+      // 새로운 응답 메시지 추가
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "system",
-          content: `Error: ${
-            error.response?.data?.error || "요청 처리 중 오류가 발생했습니다."
-          }`
-        }
-      ]);
+      const errorMessage = {
+        role: "system",
+        content: `Error: ${
+          error.response?.data?.error || "요청 처리 중 오류가 발생했습니다."
+        }`,
+        timestamp: new Date().getTime()
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
