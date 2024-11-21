@@ -1,4 +1,3 @@
-// src/pages/index.js
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { Send } from "lucide-react";
@@ -264,15 +263,6 @@ export default function Home() {
             </button>
           </form>
         </div>
-
-        {/* Copyright Footer */}
-        <footer className="bg-white border-t border-gray-100 py-2">
-          <div className="max-w-3xl mx-auto px-4">
-            <p className="text-center text-sm text-gray-500 font-medium">
-              © infiduk
-            </p>
-          </div>
-        </footer>
       </div>
     </div>
   );
