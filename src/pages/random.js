@@ -42,6 +42,17 @@ export default function RandomChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    // 현재 사용자 정보 업데이트
+    if (currentUser) {
+      const nameElement = document.getElementById("current-user-name");
+      const scoreElement = document.getElementById("current-user-score");
+      if (nameElement) nameElement.textContent = currentUser.name;
+      if (scoreElement)
+        scoreElement.textContent = `점수: ${currentUser.score}점`;
+    }
+  }, [currentUser]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -119,18 +130,24 @@ export default function RandomChat() {
   };
 
   return (
-    <div className="flex-1 relative">
+    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] relative">
       {showFireworks && <Fireworks />}
 
-      <MessageList messages={messages} currentUser={currentUser} />
+      {/* 채팅 영역 */}
+      <div className="flex-1 overflow-y-auto">
+        <MessageList messages={messages} currentUser={currentUser} />
+      </div>
 
-      <ChatInput
-        input={input}
-        setInput={setInput}
-        handleSubmit={handleSubmit}
-        isLoading={isLoading}
-        handleGuess={() => setShowGuessModal(true)}
-      />
+      {/* 입력 영역 - 하단에 고정 */}
+      <div className="sticky bottom-0 w-full">
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          isLoading={isLoading}
+          handleGuess={() => setShowGuessModal(true)}
+        />
+      </div>
 
       <GuessModal
         isOpen={showGuessModal}
