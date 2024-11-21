@@ -5,8 +5,8 @@ export default function Layout({ children }) {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen flex flex-col">
+      <header className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
@@ -29,7 +29,7 @@ export default function Layout({ children }) {
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-auto">{children}</main>
 
       <footer className="bg-white border-t border-gray-100 py-2">
         <div className="max-w-3xl mx-auto px-4">
