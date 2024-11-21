@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { Send, RefreshCw } from "lucide-react";
+import { Send, RefreshCw, Link } from "lucide-react";
 import { MBTI_COLORS, getEnhancedPrompt } from "@/constants/mbti";
 import UserModal from "@/components/UserModal";
 import Fireworks from "@/components/Fireworks";
@@ -37,6 +37,7 @@ export default function RandomChat() {
   const [showFireworks, setShowFireworks] = useState(false);
   const [revealedMBTI, setRevealedMBTI] = useState(false);
   const messagesEndRef = useRef(null);
+  const [guessCount, setGuessCount] = useState(0); // 추가: 시도 횟수 카운트
 
   // 랜덤 MBTI 선택
   useEffect(() => {
@@ -46,6 +47,24 @@ export default function RandomChat() {
     }
     startNewChat();
   }, []);
+
+  // 점수 계산 함수
+  const calculateScore = (attempts) => {
+    if (attempts >= 16) return 100; // 16번 이상 시도했으면 100점
+    return Math.max(1700 - attempts * 100, 100); // 시도마다 100점씩 감소
+  };
+
+  const handleAction = (action) => {
+    if (action === "new") {
+      // 새로운 랜덤 대화 시작
+      setMessages([]);
+      setGuessCount(0);
+      startNewChat();
+    } else if (action === "continue") {
+      // 이어서 대화하기
+      setRevealedMBTI(true);
+    }
+  };
 
   const startNewChat = () => {
     const randomIndex = Math.floor(Math.random() * MBTI_TYPES.length);
@@ -174,24 +193,90 @@ export default function RandomChat() {
   const handleGuess = () => {
     if (!guess) return;
 
+    const newGuessCount = guessCount + 1;
+    setGuessCount(newGuessCount);
+
     const isCorrect = guess === selectedMBTI;
     setGuessResult(isCorrect);
 
-    const resultMessage = {
-      role: "system",
-      content: isCorrect
-        ? `정답입니다! 상대방의 MBTI는 ${selectedMBTI}입니다!`
-        : `틀렸습니다! 다시 대화를 나누면서 맞춰보세요!`,
-      visible: true,
-      timestamp: new Date().getTime()
-    };
+    if (isCorrect) {
+      // 정답인 경우
+      setShowFireworks(true);
+      const score = calculateScore(newGuessCount);
 
-    setMessages((prev) => [...prev, resultMessage]);
+      // 사용자 점수 업데이트
+      if (currentUser) {
+        const users = JSON.parse(localStorage.getItem("mbtiUsers") || "[]");
+        const updatedUsers = users.map((u) => {
+          if (u.id === currentUser.id) {
+            return { ...u, score: (u.score || 0) + score };
+          }
+          return u;
+        });
+        localStorage.setItem("mbtiUsers", JSON.stringify(updatedUsers));
+        setCurrentUser({ ...currentUser, score: currentUser.score + score });
+      }
+
+      // 시스템 메시지 추가
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "system",
+          content: `정답입니다! 상대방의 MBTI는 ${selectedMBTI}입니다! (획득 점수: ${score}점) ${selectedMBTI}와 더 많은 대화를 나눠보세요! 새로운 랜덤 MBTI와 대화하시려면 아래 버튼을 눌러주세요.`,
+          timestamp: new Date().getTime()
+        },
+        {
+          role: "system",
+          content: "다음 중 선택해주세요",
+          buttons: [{ text: "새로운 랜덤 대화 시작", action: "new" }],
+          timestamp: new Date().getTime() + 1
+        }
+      ]);
+
+      // 3초 후 폭죽 효과 제거
+      setTimeout(() => {
+        setShowFireworks(false);
+      }, 3000);
+    } else {
+      // 오답인 경우
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "system",
+          content: "틀렸습니다! 다시 대화를 나누면서 맞춰보세요!",
+          timestamp: new Date().getTime()
+        }
+      ]);
+    }
+
     setShowModal(false);
   };
-
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50 relative">
+      <div className="sticky top-0 z-50 bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* 사용자 정보 및 전환 버튼 */}
+            <div className="flex items-center gap-4">
+              {currentUser && (
+                <div className="text-sm">
+                  <span className="font-medium">{currentUser.name}</span>
+                  <span className="ml-2 text-gray-600">
+                    점수: {currentUser.score}점
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => setShowUserModal(true)}
+                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                사용자 전환
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {showFireworks && <Fireworks />}
 
       {/* 새로운 랜덤 대화 버튼 (MBTI가 공개된 경우에만 표시) */}
@@ -207,22 +292,21 @@ export default function RandomChat() {
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto space-y-4">
+        <div className="max-w-3xl mx-auto p-4 space-y-4">
           {messages.map((message, index) => (
             <div key={message.timestamp || index}>
-              {/* 일반 메시지 */}
-              {!message.buttons && (
+              {!message.buttons ? (
                 <div
                   className={`
-                    p-4 rounded-2xl shadow-sm max-w-[85%] 
-                    ${
-                      message.role === "user"
-                        ? "ml-auto bg-gray-700 text-white"
-                        : message.role === "system"
-                        ? "bg-gray-100 text-gray-700"
-                        : "bg-blue-500 text-white"
-                    }
-                  `}
+                  p-4 rounded-2xl shadow-sm max-w-[85%] 
+                  ${
+                    message.role === "user"
+                      ? "ml-auto bg-gray-700 text-white"
+                      : message.role === "system"
+                      ? "bg-gray-100 text-gray-700"
+                      : "bg-blue-500 text-white"
+                  }
+                `}
                 >
                   <div className="text-sm font-medium mb-1 opacity-75">
                     {message.role === "user"
@@ -233,22 +317,12 @@ export default function RandomChat() {
                   </div>
                   <div>{message.content}</div>
                 </div>
-              )}
-
-              {/* 버튼이 있는 메시지 */}
-              {message.buttons && (
+              ) : (
                 <div className="flex justify-center gap-4 my-4">
                   {message.buttons.map((button, idx) => (
                     <button
                       key={idx}
-                      onClick={() => {
-                        if (button.action === "new") {
-                          startNewChat();
-                        } else {
-                          // 이어서 대화하기를 선택한 경우
-                          setRevealedMBTI(true);
-                        }
-                      }}
+                      onClick={() => handleAction(button.action)}
                       className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
                       {button.text}
@@ -258,12 +332,6 @@ export default function RandomChat() {
               )}
             </div>
           ))}
-          {isLoading && (
-            <div className="flex justify-center p-4">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -308,15 +376,22 @@ export default function RandomChat() {
         <UserModal
           onClose={() => setShowUserModal(false)}
           onSubmit={handleUserSelect}
+          currentUser={currentUser}
         />
       )}
-      {/* Guess Modal */}
+      {/* MBTI 추측 모달 */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">
               상대방의 MBTI를 맞춰보세요!
             </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              현재 시도 횟수: {guessCount + 1}회
+              {guessCount < 16
+                ? ` (맞추면 ${calculateScore(guessCount + 1)}점)`
+                : " (맞추면 100점)"}
+            </p>
             <select
               value={guess}
               onChange={(e) => setGuess(e.target.value)}
