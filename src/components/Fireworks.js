@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import confetti from "canvas-confetti";
 
-export default function Fireworks() {
+export function Fireworks() {
   useEffect(() => {
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function UserModal({ onClose, onSubmit }) {
+export function UserModal({ onClose, onSubmit, currentUser }) {
   const [newUsername, setNewUsername] = useState("");
   const [existingUsers, setExistingUsers] = useState(() => {
     if (typeof window !== "undefined") {
