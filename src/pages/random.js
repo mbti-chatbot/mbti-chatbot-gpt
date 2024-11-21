@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { Send } from "lucide-react";
+import { Send, RefreshCw } from "lucide-react";
 import { MBTI_COLORS, getEnhancedPrompt } from "@/constants/mbti";
+import UserModal from "@/components/UserModal";
+import Fireworks from "@/components/Fireworks";
 
 const MBTI_TYPES = [
   "ISTJ",
@@ -28,17 +30,28 @@ export default function RandomChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMBTI, setSelectedMBTI] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
   const [guess, setGuess] = useState("");
   const [guessResult, setGuessResult] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [revealedMBTI, setRevealedMBTI] = useState(false);
   const messagesEndRef = useRef(null);
 
   // 랜덤 MBTI 선택
   useEffect(() => {
+    const users = JSON.parse(localStorage.getItem("mbtiUsers") || "[]");
+    if (users.length === 0) {
+      setShowUserModal(true);
+    }
+    startNewChat();
+  }, []);
+
+  const startNewChat = () => {
     const randomIndex = Math.floor(Math.random() * MBTI_TYPES.length);
     const randomMBTI = MBTI_TYPES[randomIndex];
     setSelectedMBTI(randomMBTI);
-
-    // 시스템 메시지 설정
+    setRevealedMBTI(false);
     setMessages([
       {
         role: "system",
@@ -48,7 +61,57 @@ export default function RandomChat() {
         timestamp: new Date().getTime()
       }
     ]);
-  }, []);
+  };
+
+  const handleUserSelect = (user) => {
+    setCurrentUser(user);
+    setShowUserModal(false);
+    startNewChat();
+  };
+
+  const handleCorrectGuess = () => {
+    setShowFireworks(true);
+
+    // 점수 업데이트
+    if (currentUser) {
+      const users = JSON.parse(localStorage.getItem("mbtiUsers") || "[]");
+      const updatedUsers = users.map((u) => {
+        if (u.id === currentUser.id) {
+          return { ...u, score: (u.score || 0) + 1 };
+        }
+        return u;
+      });
+      localStorage.setItem("mbtiUsers", JSON.stringify(updatedUsers));
+      setCurrentUser({ ...currentUser, score: currentUser.score + 1 });
+    }
+
+    // 3초 후 폭죽 효과 제거
+    setTimeout(() => {
+      setShowFireworks(false);
+    }, 3000);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "system",
+        content: `정답입니다! 상대방의 MBTI는 ${selectedMBTI}입니다!`,
+        visible: true,
+        timestamp: new Date().getTime()
+      },
+      {
+        role: "system",
+        content: "다음 중 선택해주세요:",
+        buttons: [
+          { text: "새로운 랜덤 대화 시작", action: "new" },
+          { text: "이어서 대화하기", action: "continue" }
+        ],
+        visible: true,
+        timestamp: new Date().getTime() + 1
+      }
+    ]);
+
+    setRevealedMBTI(true);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,36 +191,73 @@ export default function RandomChat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50 relative">
+      {showFireworks && <Fireworks />}
+
+      {/* 새로운 랜덤 대화 버튼 (MBTI가 공개된 경우에만 표시) */}
+      {revealedMBTI && (
+        <button
+          onClick={startNewChat}
+          className="absolute top-4 right-4 px-4 py-2 bg-green-500 text-white rounded-lg flex items-center gap-2 hover:bg-green-600"
+        >
+          <RefreshCw className="h-4 w-4" />
+          새로운 랜덤 대화
+        </button>
+      )}
+
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-4">
-          {messages
-            .filter((m) => m.visible)
-            .map((message, index) => (
-              <div
-                key={message.timestamp || index}
-                className={`
-                p-4 rounded-2xl shadow-sm max-w-[85%] 
-                ${
-                  message.role === "user"
-                    ? "ml-auto bg-gray-700 text-white"
-                    : message.role === "system"
-                    ? "bg-gray-100 text-gray-700"
-                    : "bg-blue-500 text-white"
-                }
-              `}
-              >
-                <div className="text-sm font-medium mb-1 opacity-75">
-                  {message.role === "user"
-                    ? "You"
-                    : message.role === "system"
-                    ? "System"
-                    : "Assistant"}
+          {messages.map((message, index) => (
+            <div key={message.timestamp || index}>
+              {/* 일반 메시지 */}
+              {!message.buttons && (
+                <div
+                  className={`
+                    p-4 rounded-2xl shadow-sm max-w-[85%] 
+                    ${
+                      message.role === "user"
+                        ? "ml-auto bg-gray-700 text-white"
+                        : message.role === "system"
+                        ? "bg-gray-100 text-gray-700"
+                        : "bg-blue-500 text-white"
+                    }
+                  `}
+                >
+                  <div className="text-sm font-medium mb-1 opacity-75">
+                    {message.role === "user"
+                      ? currentUser?.name || "You"
+                      : message.role === "system"
+                      ? "System"
+                      : "Assistant"}
+                  </div>
+                  <div>{message.content}</div>
                 </div>
-                <div>{message.content}</div>
-              </div>
-            ))}
+              )}
+
+              {/* 버튼이 있는 메시지 */}
+              {message.buttons && (
+                <div className="flex justify-center gap-4 my-4">
+                  {message.buttons.map((button, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        if (button.action === "new") {
+                          startNewChat();
+                        } else {
+                          // 이어서 대화하기를 선택한 경우
+                          setRevealedMBTI(true);
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    >
+                      {button.text}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
           {isLoading && (
             <div className="flex justify-center p-4">
               <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
@@ -203,6 +303,13 @@ export default function RandomChat() {
         </form>
       </div>
 
+      {/* 모달들 */}
+      {showUserModal && (
+        <UserModal
+          onClose={() => setShowUserModal(false)}
+          onSubmit={handleUserSelect}
+        />
+      )}
       {/* Guess Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
