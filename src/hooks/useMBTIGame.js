@@ -1,10 +1,11 @@
-import { MBTI_TYPES } from "@/constants";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { MBTI_TYPES } from "@/constants/mbti";
 
 export function useMBTIGame() {
   const [selectedMBTI, setSelectedMBTI] = useState(null);
   const [guessCount, setGuessCount] = useState(0);
   const [showFireworks, setShowFireworks] = useState(false);
+  const [isMBTIRevealed, setIsMBTIRevealed] = useState(false);
 
   const calculateScore = (attempts) => {
     if (attempts >= 16) return 100;
@@ -16,16 +17,18 @@ export function useMBTIGame() {
     const randomMBTI = MBTI_TYPES[randomIndex];
     setSelectedMBTI(randomMBTI);
     setGuessCount(0);
+    setIsMBTIRevealed(false);
     return randomMBTI;
   };
 
   return {
     selectedMBTI,
-    setSelectedMBTI,
     guessCount,
     setGuessCount,
     showFireworks,
     setShowFireworks,
+    isMBTIRevealed,
+    setIsMBTIRevealed,
     calculateScore,
     startNewGame
   };

@@ -5,7 +5,8 @@ export function ChatInput({
   setInput,
   handleSubmit,
   isLoading,
-  handleGuess
+  handleGuess,
+  disabled = false
 }) {
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-4">
@@ -33,8 +34,9 @@ export function ChatInput({
         <button
           type="button"
           onClick={handleGuess}
+          disabled={disabled}
           className="px-6 py-3 bg-green-500 text-white rounded-xl
-                   hover:bg-green-600
+                   hover:bg-green-600 disabled:opacity-50
                    flex items-center gap-2 shadow-sm hover:shadow-md
                    transition-all duration-200"
         >

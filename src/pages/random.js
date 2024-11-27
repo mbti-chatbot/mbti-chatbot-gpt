@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useChat, useUser, useMBTIGame } from "@/hooks";
 import {
   MessageList,
@@ -10,15 +10,25 @@ import {
 import { getEnhancedPrompt } from "@/constants";
 
 export default function RandomChat() {
-  const { messages, setMessages, input, setInput, isLoading, sendMessage } =
-    useChat();
+  const [showGuessModal, setShowGuessModal] = useState(false);
+
+  const {
+    messages,
+    setMessages,
+    input,
+    setInput,
+    isLoading,
+    sendMessage,
+    initializeChat,
+    messagesEndRef
+  } = useChat();
 
   const {
     currentUser,
-    setCurrentUser,
     showUserModal,
     setShowUserModal,
-    updateUserScore
+    updateUserScore,
+    selectUser
   } = useUser();
 
   const {
@@ -27,35 +37,26 @@ export default function RandomChat() {
     setGuessCount,
     showFireworks,
     setShowFireworks,
+    isMBTIRevealed,
+    setIsMBTIRevealed,
     calculateScore,
     startNewGame
   } = useMBTIGame();
 
-  const [showGuessModal, setShowGuessModal] = useState(false);
-  const messagesEndRef = useRef(null);
-
+  // 초기 메시지 설정
   useEffect(() => {
-    startNewGame();
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
-    // 현재 사용자 정보 업데이트
-    if (currentUser) {
-      const nameElement = document.getElementById("current-user-name");
-      const scoreElement = document.getElementById("current-user-score");
-      if (nameElement) nameElement.textContent = currentUser.name;
-      if (scoreElement)
-        scoreElement.textContent = `점수: ${currentUser.score}점`;
+    // 클라이언트 사이드에서만 실행
+    if (typeof window !== "undefined") {
+      const mbti = startNewGame();
+      initializeChat(
+        "랜덤 MBTI와 대화를 진행해 보세요! 대화를 나누면서 상대방의 MBTI가 무엇일지 맞춰보세요."
+      );
     }
-  }, [currentUser]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !selectedMBTI) return;
 
     const userMessage = {
       role: "user",
@@ -76,7 +77,8 @@ export default function RandomChat() {
         {
           role: "assistant",
           content: response,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          mbti: selectedMBTI
         }
       ]);
     } catch (error) {
@@ -96,7 +98,18 @@ export default function RandomChat() {
     const score = calculateScore(guessCount + 1);
 
     if (isCorrect) {
+      console.log(currentUser);
+      if (!JSON.stringify(currentUser)) {
+        alert("현재 선택된 사용자가 없어 점수를 등록할 수 없습니다.");
+        setShowGuessModal(false);
+        startNewGame();
+        initializeChat(
+          "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요."
+        );
+        return;
+      }
       setShowFireworks(true);
+      setIsMBTIRevealed(true);
       updateUserScore(currentUser.id, score);
 
       setMessages((prev) => [
@@ -104,15 +117,17 @@ export default function RandomChat() {
         {
           role: "system",
           content: `정답입니다! 상대방의 MBTI는 ${selectedMBTI}입니다! (획득 점수: ${score}점)
-새로운 대화를 시작합니다.`,
+새로운 대화를 시작하시겠습니까?`,
           timestamp: Date.now()
         }
       ]);
 
       setTimeout(() => {
         setShowFireworks(false);
-        startNewGame();
-        setMessages([]);
+        // startNewGame();
+        // initializeChat(
+        //   "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요."
+        // );
       }, 3000);
     } else {
       setGuessCount((prev) => prev + 1);
@@ -125,29 +140,30 @@ export default function RandomChat() {
         }
       ]);
     }
-
     setShowGuessModal(false);
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] relative">
+    <div className="flex-1 flex flex-col relative">
       {showFireworks && <Fireworks />}
 
-      {/* 채팅 영역 */}
       <div className="flex-1 overflow-y-auto">
-        <MessageList messages={messages} currentUser={currentUser} />
-      </div>
-
-      {/* 입력 영역 - 하단에 고정 */}
-      <div className="sticky bottom-0 w-full">
-        <ChatInput
-          input={input}
-          setInput={setInput}
-          handleSubmit={handleSubmit}
-          isLoading={isLoading}
-          handleGuess={() => setShowGuessModal(true)}
+        <MessageList
+          messages={messages}
+          currentUser={currentUser}
+          selectedMBTI={selectedMBTI}
+          messagesEndRef={messagesEndRef}
         />
       </div>
+
+      <ChatInput
+        input={input}
+        setInput={setInput}
+        handleSubmit={handleSubmit}
+        isLoading={isLoading}
+        handleGuess={() => !isMBTIRevealed && setShowGuessModal(true)}
+        disabled={isMBTIRevealed}
+      />
 
       <GuessModal
         isOpen={showGuessModal}
@@ -157,16 +173,20 @@ export default function RandomChat() {
         calculateScore={calculateScore}
       />
 
-      {showUserModal && (
+      {/* {showUserModal && (
         <UserModal
           onClose={() => setShowUserModal(false)}
           onSubmit={(user) => {
-            setCurrentUser(user);
-            setShowUserModal(false);
+            if (user.id === currentUser?.id) {
+              switchUser(user);
+            } else {
+              selectUser(user);
+            }
           }}
           currentUser={currentUser}
+          forceAdd={!currentUser && !localStorage.getItem("mbtiUsers")}
         />
-      )}
+      )} */}
     </div>
   );
 }

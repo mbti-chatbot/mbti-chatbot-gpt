@@ -1,11 +1,16 @@
-// src/components/Layout.js
-import { useState } from "react";
 import { useRouter } from "next/router";
+import { useUser } from "@/hooks";
 import { UserModal } from "@/components";
 
 export default function Layout({ children }) {
   const router = useRouter();
-  const [showUserModal, setShowUserModal] = useState(false);
+  const {
+    currentUser,
+    showUserModal,
+    setShowUserModal,
+    selectUser,
+    switchUser
+  } = useUser();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -28,20 +33,30 @@ export default function Layout({ children }) {
                 랜덤 대화
               </a>
             </div>
+
+            {/* 사용자 정보 표시 */}
             {router.pathname === "/random" && (
               <div className="flex items-center gap-4">
-                <div className="text-sm">
-                  <span className="font-medium" id="current-user-name"></span>
-                  <span
-                    className="ml-2 text-gray-600"
-                    id="current-user-score"
-                  ></span>
-                </div>
+                {currentUser ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {currentUser.name}
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {currentUser.score || 0}점
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-600">
+                    사용자를 선택해주세요
+                  </span>
+                )}
                 <button
                   onClick={() => setShowUserModal(true)}
-                  className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 
+                           text-gray-700 rounded-lg transition-colors"
                 >
-                  사용자 전환
+                  {currentUser ? "사용자 전환" : "사용자 선택"}
                 </button>
               </div>
             )}
@@ -63,15 +78,14 @@ export default function Layout({ children }) {
         <UserModal
           onClose={() => setShowUserModal(false)}
           onSubmit={(user) => {
-            const nameElement = document.getElementById("current-user-name");
-            const scoreElement = document.getElementById("current-user-score");
-            if (nameElement) nameElement.textContent = user.name;
-            if (scoreElement)
-              scoreElement.textContent = `점수: ${user.score}점`;
-            setShowUserModal(false);
-            // 페이지 새로고침
-            router.reload();
+            if (user.id === currentUser?.id) {
+              switchUser(user);
+            } else {
+              selectUser(user);
+            }
           }}
+          currentUser={currentUser}
+          forceAdd={!currentUser && !localStorage.getItem("mbtiUsers")}
         />
       )}
     </div>

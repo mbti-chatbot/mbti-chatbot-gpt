@@ -99,7 +99,6 @@ export const MBTI_COLORS = {
     chat: "bg-fuchsia-500"
   }
 };
-
 export const MBTI_PERSONALITIES = {
   ISTJ: {
     traits:

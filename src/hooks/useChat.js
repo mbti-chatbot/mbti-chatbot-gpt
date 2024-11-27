@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { getEnhancedPrompt } from "@/constants/mbti";
 
 export function useChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = async (message, systemPrompt) => {
     setIsLoading(true);
@@ -26,12 +34,24 @@ export function useChat() {
     }
   };
 
+  const initializeChat = (initialMessage) => {
+    setMessages([
+      {
+        role: "system",
+        content: initialMessage,
+        timestamp: Date.now()
+      }
+    ]);
+  };
+
   return {
     messages,
     setMessages,
     input,
     setInput,
     isLoading,
-    sendMessage
+    sendMessage,
+    initializeChat,
+    messagesEndRef
   };
 }
