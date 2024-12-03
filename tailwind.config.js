@@ -1,3 +1,4 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -6,22 +7,74 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}"
   ],
   theme: {
-    extend: {
-      colors: {
-        primary: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          500: "#0ea5e9",
-          600: "#0284c7"
-        }
-      },
-      spacing: {
-        18: "4.5rem"
-      },
-      maxWidth: {
-        "8xl": "88rem"
-      }
-    }
+    extend: {}
   },
-  plugins: [require("@tailwindcss/forms")]
+  plugins: [require("@tailwindcss/forms")],
+  safelist: [
+    "bg-slate-100",
+    "bg-slate-200",
+    "bg-slate-500",
+    "bg-red-100",
+    "bg-red-200",
+    "bg-red-500",
+    "bg-orange-100",
+    "bg-orange-200",
+    "bg-orange-500",
+    "bg-amber-100",
+    "bg-amber-200",
+    "bg-amber-500",
+    "bg-yellow-100",
+    "bg-yellow-200",
+    "bg-yellow-500",
+    "bg-lime-100",
+    "bg-lime-200",
+    "bg-lime-500",
+    "bg-green-100",
+    "bg-green-200",
+    "bg-green-500",
+    "bg-emerald-100",
+    "bg-emerald-200",
+    "bg-emerald-500",
+    "bg-teal-100",
+    "bg-teal-200",
+    "bg-teal-500",
+    "bg-cyan-100",
+    "bg-cyan-200",
+    "bg-cyan-500",
+    "bg-sky-100",
+    "bg-sky-200",
+    "bg-sky-500",
+    "bg-blue-100",
+    "bg-blue-200",
+    "bg-blue-500",
+    "bg-indigo-100",
+    "bg-indigo-200",
+    "bg-indigo-500",
+    "bg-violet-100",
+    "bg-violet-200",
+    "bg-violet-500",
+    "bg-purple-100",
+    "bg-purple-200",
+    "bg-purple-500",
+    "bg-fuchsia-100",
+    "bg-fuchsia-200",
+    "bg-fuchsia-500",
+    "hover:bg-slate-200",
+    "hover:bg-red-200",
+    "hover:bg-orange-200",
+    "hover:bg-amber-200",
+    "hover:bg-yellow-200",
+    "hover:bg-lime-200",
+    "hover:bg-green-200",
+    "hover:bg-emerald-200",
+    "hover:bg-teal-200",
+    "hover:bg-cyan-200",
+    "hover:bg-sky-200",
+    "hover:bg-blue-200",
+    "hover:bg-indigo-200",
+    "hover:bg-violet-200",
+    "hover:bg-purple-200",
+    "hover:bg-fuchsia-200",
+    "text-white"
+  ]
 };
