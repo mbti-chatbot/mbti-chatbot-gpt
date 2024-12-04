@@ -4,6 +4,8 @@ import { UserModal } from "@/components";
 
 export default function Layout({ children }) {
   const router = useRouter();
+  const isMainPage = router.pathname === "/";
+  const isRandomPage = router.pathname === "/random";
   const {
     currentUser,
     showUserModal,
@@ -21,21 +23,21 @@ export default function Layout({ children }) {
               <a
                 href="/"
                 className={`text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium
-                  ${router.pathname === "/" ? "text-blue-600" : ""}`}
+                  ${isMainPage ? "text-blue-500" : ""}`}
               >
                 MBTI 대화
               </a>
               <a
                 href="/random"
                 className={`text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium
-                  ${router.pathname === "/random" ? "text-blue-600" : ""}`}
+                  ${isRandomPage ? "text-blue-500" : ""}`}
               >
                 랜덤 대화
               </a>
             </div>
 
             {/* 사용자 정보 표시 */}
-            {router.pathname === "/random" && (
+            {isRandomPage && (
               <div className="flex items-center gap-4">
                 {currentUser ? (
                   <div className="flex items-center gap-2">
@@ -74,7 +76,7 @@ export default function Layout({ children }) {
         </div>
       </footer>
 
-      {showUserModal && (
+      {isRandomPage && showUserModal && (
         <UserModal
           onClose={() => setShowUserModal(false)}
           onSubmit={(user) => {

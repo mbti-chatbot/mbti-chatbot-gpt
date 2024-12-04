@@ -6,7 +6,8 @@ export function ChatInput({
   handleSubmit,
   isLoading,
   handleGuess,
-  disabled = false
+  disabled = false,
+  isRandomChat = false
 }) {
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-4">
@@ -31,17 +32,19 @@ export function ChatInput({
           <Send className="h-5 w-5" />
           <span className="hidden sm:inline">전송</span>
         </button>
-        <button
-          type="button"
-          onClick={handleGuess}
-          disabled={disabled}
-          className="px-6 py-3 bg-green-500 text-white rounded-xl
+        {isRandomChat && (
+          <button
+            type="button"
+            onClick={handleGuess}
+            disabled={disabled}
+            className="px-6 py-3 bg-green-500 text-white rounded-xl
                    hover:bg-green-600 disabled:opacity-50
                    flex items-center gap-2 shadow-sm hover:shadow-md
                    transition-all duration-200"
-        >
-          <span>MBTI 맞추기</span>
-        </button>
+          >
+            <span>MBTI 맞추기</span>
+          </button>
+        )}
       </form>
     </div>
   );

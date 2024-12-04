@@ -153,6 +153,7 @@ export default function RandomChat() {
           currentUser={currentUser}
           selectedMBTI={selectedMBTI}
           messagesEndRef={messagesEndRef}
+          isRandomChat={true}
         />
       </div>
 
@@ -163,6 +164,7 @@ export default function RandomChat() {
         isLoading={isLoading}
         handleGuess={() => !isMBTIRevealed && setShowGuessModal(true)}
         disabled={isMBTIRevealed}
+        isRandomChat={true}
       />
 
       <GuessModal
