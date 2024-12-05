@@ -45,10 +45,14 @@ export function useUser() {
     let users = JSON.parse(localStorage.getItem("mbtiUsers") || "[]");
     const currentUserData = localStorage.getItem("currentUser");
 
-    // currentUser는 있는데 mbtiUsers가 없거나 비어있는 경우
-    if (currentUserData && users.length === 0) {
-      const currentUser = JSON.parse(currentUserData);
-      users = [currentUser];
+    if (!currentUserData) return;
+
+    const currentUser = JSON.parse(currentUserData);
+
+    // currentUser가 mbtiUsers에 없는 경우
+    if (!users.some((u) => u.id === currentUser.id)) {
+      users = [...users, { ...currentUser, score: 0 }];
+      localStorage.setItem("mbtiUsers", JSON.stringify(users));
     }
 
     const updatedUsers = users.map((u) => {
