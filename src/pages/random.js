@@ -93,24 +93,24 @@ export default function RandomChat() {
     }
   };
 
+  // src/pages/random.js
   const handleGuess = async (guess) => {
+    if (!currentUser) {
+      setShowUserModal(true);
+      return;
+    }
+
     const isCorrect = guess === selectedMBTI;
     const score = calculateScore(guessCount + 1);
 
     if (isCorrect) {
-      console.log(currentUser);
-      if (!JSON.stringify(currentUser)) {
-        alert("현재 선택된 사용자가 없어 점수를 등록할 수 없습니다.");
-        setShowGuessModal(false);
-        startNewGame();
-        initializeChat(
-          "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요."
-        );
-        return;
-      }
       setShowFireworks(true);
       setIsMBTIRevealed(true);
-      updateUserScore(currentUser.id, score);
+
+      // currentUser가 있는지 확인 후 점수 업데이트
+      if (currentUser?.id) {
+        updateUserScore(currentUser.id, score);
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -124,10 +124,10 @@ export default function RandomChat() {
 
       setTimeout(() => {
         setShowFireworks(false);
-        // startNewGame();
-        // initializeChat(
-        //   "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요."
-        // );
+        startNewGame();
+        initializeChat(
+          "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요."
+        );
       }, 3000);
     } else {
       setGuessCount((prev) => prev + 1);
