@@ -4,7 +4,8 @@ export function MessageList({
   messages,
   currentUser,
   selectedMBTI,
-  messagesEndRef
+  messagesEndRef,
+  isRandomChat = false
 }) {
   const getMessageStyle = (message) => {
     if (message.role === "user") {
@@ -14,6 +15,9 @@ export function MessageList({
       return "bg-gray-100 text-gray-700";
     }
     if (message.mbti && MBTI_COLORS[message.mbti]) {
+      if (isRandomChat) {
+        return "bg-blue-500 text-white";
+      }
       return `${MBTI_COLORS[message.mbti].chat} text-white`;
     }
     // 기본 assistant 메시지 스타일
