@@ -8,6 +8,7 @@ import {
   UserModal
 } from "@/components";
 import { getEnhancedPrompt } from "@/constants";
+import { RefreshCw } from "lucide-react";
 
 export default function RandomChat() {
   const [showGuessModal, setShowGuessModal] = useState(false);
@@ -93,7 +94,6 @@ export default function RandomChat() {
     }
   };
 
-  // src/pages/random.js
   const handleGuess = async (guess) => {
     if (!currentUser) {
       setShowUserModal(true);
@@ -116,18 +116,13 @@ export default function RandomChat() {
         ...prev,
         {
           role: "system",
-          content: `정답입니다! 상대방의 MBTI는 ${selectedMBTI}입니다! (획득 점수: ${score}점)
-새로운 대화를 시작하시겠습니까?`,
+          content: `정답입니다! 상대방의 MBTI는 ${selectedMBTI}입니다! (획득 점수: ${score}점)`,
           timestamp: Date.now()
         }
       ]);
 
       setTimeout(() => {
         setShowFireworks(false);
-        startNewGame();
-        initializeChat(
-          "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요."
-        );
       }, 3000);
     } else {
       setGuessCount((prev) => prev + 1);
@@ -143,9 +138,36 @@ export default function RandomChat() {
     setShowGuessModal(false);
   };
 
+  const handleStartNewChat = () => {
+    startNewGame();
+    setMessages([
+      {
+        role: "system",
+        content:
+          "새로운 MBTI와의 대화가 시작되었습니다! 상대방의 MBTI를 맞춰보세요.",
+        timestamp: Date.now()
+      }
+    ]);
+    setIsMBTIRevealed(false);
+  };
+
   return (
     <div className="flex-1 flex flex-col relative">
       {showFireworks && <Fireworks />}
+
+      {/* 새로운 대화 시작 버튼 */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+        <div className="max-w-3xl mx-auto px-4 py-2">
+          <button
+            onClick={handleStartNewChat}
+            className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors
+                     flex items-center justify-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            새로운 대화 시작하기
+          </button>
+        </div>
+      </div>
 
       <div className="flex-1 overflow-y-auto">
         <MessageList
