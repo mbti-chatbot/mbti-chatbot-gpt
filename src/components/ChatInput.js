@@ -36,7 +36,7 @@ export function ChatInput({
           <button
             type="button"
             onClick={handleGuess}
-            disabled={disabled}
+            disabled={disabled || isLoading}
             className="px-6 py-3 bg-green-500 text-white rounded-xl
                    hover:bg-green-600 disabled:opacity-50
                    flex items-center gap-2 shadow-sm hover:shadow-md
